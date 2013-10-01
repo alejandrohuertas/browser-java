@@ -1,16 +1,12 @@
 package standalone;
 
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FilenameFilter;
 
 import javax.swing.JFrame;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.plaf.metal.MetalIconFactory.FolderIcon16;
 
 public class Browser extends JFrame{
     
@@ -29,7 +25,7 @@ public class Browser extends JFrame{
         File mainFolder = new File(System.getProperty("user.home"));
         
         loadDirectories(mainFolder);
-        
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
     
     public void loadDirectories (File folder){
@@ -43,18 +39,11 @@ public class Browser extends JFrame{
         
         File[] files = folder.listFiles(hiddenFilesFilter);
         foldersList = new JList(files);
-//        foldersList.setCellRenderer(new FileRenderer(true));
         panel2.add(new JScrollPane(foldersList));
         foldersList.setVisibleRowCount(9);
         foldersList.setSelectedIndex(0);
         
-        addWindowListener(new WindowAdapter() {
-        
-            @Override
-            public void windowClosing(WindowEvent e) {
-                
-            }
-        });
+
     }
 
     
