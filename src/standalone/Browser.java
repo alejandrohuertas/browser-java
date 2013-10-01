@@ -9,11 +9,11 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
-
 import com.leapmotion.leap.Controller;
 import com.leapmotion.leap.Frame;
 import com.leapmotion.leap.Gesture;
 import com.leapmotion.leap.GestureList;
+import com.leapmotion.leap.KeyTapGesture;
 import com.leapmotion.leap.Listener;
 import com.leapmotion.leap.SwipeGesture;
 
@@ -50,14 +50,23 @@ public class Browser extends JFrame{
         
         File[] files = folder.listFiles(hiddenFilesFilter);
         foldersList = new JList(files);
+        panel2.removeAll();
         panel2.add(new JScrollPane(foldersList));
         foldersList.setVisibleRowCount(9);
         foldersList.setSelectedIndex(0);
-        
+        panel2.revalidate();
 
     }
 
-    
+    public void openSelectedFile(){
+        File file = (File) foldersList.getModel().getElementAt(foldersList.getSelectedIndex());
+        if (file.isDirectory()){
+            loadDirectories(file);
+        }
+        else{
+            //TODO: what if is an archive
+        }
+    }
     public void moveToNextFile(){
         if (foldersList.getModel().getSize()>=(foldersList.getSelectedIndex()+1)){
             foldersList.setSelectedIndex(foldersList.getSelectedIndex()+1);
@@ -78,7 +87,7 @@ public class Browser extends JFrame{
         public void onConnect(Controller controller) {
             System.out.println("Connected");
             controller.enableGesture(Gesture.Type.TYPE_SWIPE);
-            controller.enableGesture(Gesture.Type.TYPE_CIRCLE);
+            controller.enableGesture(Gesture.Type.TYPE_KEY_TAP);
         }
         
         public void onDisconnect(Controller controller) {
@@ -98,7 +107,7 @@ public class Browser extends JFrame{
             GestureList gestures = frame.gestures();
             for (int i = 0; i < gestures.count(); i++) {
                 Gesture gesture = gestures.get(i);
-                if (gesture.duration()>=10000 && gesture.state().toString().equals("STATE_STOP")){
+                if (gesture.duration()>=50000 && gesture.state().toString().equals("STATE_STOP")){
                     System.out.println("Gesture type --> "+gesture.type()+ ", Duration -->" +gesture.duration());
                     
                     switch (gesture.type()) {
@@ -115,6 +124,12 @@ public class Browser extends JFrame{
                         }
                     break;
                         
+                    case TYPE_KEY_TAP:
+                        KeyTapGesture keytap = new KeyTapGesture(gesture);
+                        if (keytap.duration()>100000){
+                            browser.openSelectedFile();
+                        }
+                    break;
                     default:
                         System.out.println("Unknown gesture type.");
                     break;
