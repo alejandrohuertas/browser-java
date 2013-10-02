@@ -6,6 +6,7 @@ import standalone.utils.*;
 
 import javax.swing.JFrame;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 
 import javax.swing.JLabel;
@@ -17,6 +18,7 @@ import java.io.IOException;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
+import com.leapmotion.leap.CircleGesture;
 import com.leapmotion.leap.Controller;
 import com.leapmotion.leap.Frame;
 import com.leapmotion.leap.Gesture;
@@ -120,16 +122,21 @@ public class BrowserApp {
         foldersList.setVisibleRowCount(9);       
         foldersList.setSelectedIndex(0);
         panel.revalidate();
+        this.frame.repaint();
+        this.frame.validate();
+
     }
 
     
 	public void openSelectedFile(){
-        File file = (File) foldersList.getModel().getElementAt(foldersList.getSelectedIndex());
-        if (file.isDirectory()){
-            loadDirectories(file);
-        }
-        else{
-            //TODO: what if is an archive (we should open the file (if possible using some viewer)
+	    if (foldersList.getModel().getSize()>0){
+            File file = (File) foldersList.getModel().getElementAt(foldersList.getSelectedIndex());
+            if (file.isDirectory()){
+                loadDirectories(file);
+            }
+            else{
+                //TODO: what if is an archive
+            }
         }
     }
     public void moveToNextFile(){
@@ -143,6 +150,18 @@ public class BrowserApp {
         }
     }
     
+    public void goToParentFolder() {
+        File file = (File) foldersList.getModel().getElementAt(foldersList.getSelectedIndex());
+        File currentFolder = new File(file.getParent());
+        if (currentFolder.getParent()!=null){
+            File parent = new File(currentFolder.getParent());
+            loadDirectories(parent);
+        }
+        else{
+            JOptionPane.showMessageDialog(null, "There's no upper Level from this folder");
+        }
+    }
+    
     class LeapListenerController extends Listener {
         
         public void onInit(Controller controller) {
@@ -153,6 +172,7 @@ public class BrowserApp {
             System.out.println("Connected");
             controller.enableGesture(Gesture.Type.TYPE_SWIPE);
             controller.enableGesture(Gesture.Type.TYPE_KEY_TAP);
+            controller.enableGesture(Gesture.Type.TYPE_CIRCLE);
         }
         
         public void onDisconnect(Controller controller) {
@@ -188,7 +208,24 @@ public class BrowserApp {
                             browser.moveToPreviousFile();
                         }
                     break;
-                        
+                    case TYPE_CIRCLE:
+                        CircleGesture circle = new CircleGesture(gesture);
+                        if (circle.radius()>100){
+                            // Calculate clock direction using the angle between circle normal and pointable
+                            boolean clockwise;
+                            if (circle.pointable().direction().angleTo(circle.normal()) <= Math.PI/4) {
+                                // Clockwise if angle is less than 90 degrees
+                                clockwise = true;
+                            } else {
+                                clockwise = false;
+                            }
+                            
+                            if (!clockwise){
+                                browser.goToParentFolder();
+                            }
+                        }
+
+                    break;
                     case TYPE_KEY_TAP:
                         KeyTapGesture keytap = new KeyTapGesture(gesture);
                         if (keytap.duration()>100000){
@@ -210,7 +247,7 @@ public class BrowserApp {
     public static void main (String... args){
         browser = new BrowserApp();
         
-        //browser.setVisible(true);
+        browser.frame.setVisible(true);
         
         LeapListenerController leapListener = browser.new LeapListenerController();
         Controller controller = new Controller();
