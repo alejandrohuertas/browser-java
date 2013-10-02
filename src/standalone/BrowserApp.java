@@ -29,10 +29,11 @@ import com.leapmotion.leap.SwipeGesture;
 
 public class BrowserApp {
 	
-	private static BrowserApp browser; 
-	private JFrame frame;
-	private JList foldersList;
-	private JPanel panel;
+    private static BrowserApp browser; 
+    private JFrame frame;
+    private JList foldersList;
+    private JPanel panel;
+    private JLabel workingWith;
 
 	
 	/**
@@ -84,8 +85,8 @@ public class BrowserApp {
 		frame.getContentPane().add(urlPanel);
 				
 		File mainFolder = new File(System.getProperty("user.home") + System.getProperty("file.separator") + "Pictures" + System.getProperty("file.separator"));
-		
-		JLabel workingWith = new JLabel("Working with " + mainFolder.getAbsolutePath());
+
+        workingWith = new JLabel("Working with " + mainFolder.getAbsolutePath());
 		urlPanel.add(workingWith);
 		workingWith.setHorizontalAlignment(SwingConstants.LEFT);
 		
@@ -108,6 +109,7 @@ public class BrowserApp {
         File[] files = folder.listFiles(hiddenFilesFilter);
         panel.setLayout(null);
         panel.removeAll();
+        workingWith.setText("Working with " + folder.getAbsolutePath());
         JScrollPane scrollPane = new JScrollPane();
         scrollPane.setBounds(10, 5, 594, 349);
         panel.add(scrollPane);
