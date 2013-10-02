@@ -4,6 +4,7 @@ package standalone;
 
 import standalone.utils.*;
 
+import javax.activation.MimetypesFileTypeMap;
 import javax.swing.JFrame;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
@@ -137,7 +138,21 @@ public class BrowserApp {
                 loadDirectories(file);
             }
             else{
-                //TODO: what if is an archive
+                boolean isImage= false;
+                String mimetype= new MimetypesFileTypeMap().getContentType(file);
+                String type = mimetype.split("/")[0];
+                if(type.equals("image"))
+                    isImage= true;
+                
+                if (isImage){
+                    JOptionPane.showMessageDialog(null, "Is an IMAGE");
+                    //TODO: must show the image in an new window like a JOptionPane maybe, to begin
+                    
+                }
+                else{
+                    JOptionPane.showMessageDialog(null, "Can't open the file! it's not an Image");
+                }
+                
             }
         }
     }
