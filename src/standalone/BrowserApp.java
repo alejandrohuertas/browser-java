@@ -2,22 +2,21 @@ package standalone;
 
 //import java.awt.EventQueue;
 
-import standalone.utils.*;
-
-import javax.activation.MimetypesFileTypeMap;
-import javax.swing.JFrame;
-import javax.swing.JList;
-import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
-
-import javax.swing.JLabel;
 import java.awt.Font;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 
+import javax.activation.MimetypesFileTypeMap;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.SwingConstants;
+
+import standalone.utils.MyFileCellRenderer;
 
 import com.leapmotion.leap.CircleGesture;
 import com.leapmotion.leap.Controller;
@@ -35,7 +34,7 @@ public class BrowserApp {
     private JList foldersList;
     private JPanel panel;
     private JLabel workingWith;
-
+    private ImageViewer imageViewFrame;
 	
 	/**
 	 * Launch the application.
@@ -130,23 +129,17 @@ public class BrowserApp {
 
     }
 
-    
-	public void openSelectedFile(){
-	    if (foldersList.getModel().getSize()>0){
+
+    public void openSelectedFile(){
+        if (foldersList.getModel().getSize()>0){
             File file = (File) foldersList.getModel().getElementAt(foldersList.getSelectedIndex());
             if (file.isDirectory()){
                 loadDirectories(file);
             }
             else{
-                boolean isImage= false;
-                String mimetype= new MimetypesFileTypeMap().getContentType(file);
-                String type = mimetype.split("/")[0];
-                if(type.equals("image"))
-                    isImage= true;
-                
-                if (isImage){
-                    JOptionPane.showMessageDialog(null, "Is an IMAGE");
-                    //TODO: must show the image in an new window like a JOptionPane maybe, to begin
+                if (isFileImage(file)){
+                    imageViewFrame= new ImageViewer(file, foldersList);
+                    imageViewFrame.setVisible(true);
                     
                 }
                 else{
@@ -156,6 +149,16 @@ public class BrowserApp {
             }
         }
     }
+
+    public boolean isFileImage(File file){
+
+        MimetypesFileTypeMap mtFileTypeMap = new MimetypesFileTypeMap();
+        mtFileTypeMap.addMimeTypes("image/png png PNG");
+        String mimetype= mtFileTypeMap.getContentType(file);
+        String type = mimetype.split("/")[0];
+        return type.equals("image");
+    }
+	
     public void moveToNextFile(){
         if (foldersList.getModel().getSize()>=(foldersList.getSelectedIndex()+1)){
             foldersList.setSelectedIndex(foldersList.getSelectedIndex()+1);
