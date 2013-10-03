@@ -35,7 +35,7 @@ public class BrowserApp {
     private JPanel panel;
     private JLabel workingWith;
     private ImageViewer imageViewFrame;
-	
+	protected boolean isViewerActive; 
 	/**
 	 * Launch the application.
 	 */
@@ -64,6 +64,7 @@ public class BrowserApp {
 	 * Initialize the contents of the frame.
 	 */
 	private void initialize() {
+	    isViewerActive = false;
 		frame = new JFrame();
 		frame.setBounds(100, 100, 640, 480);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -140,12 +141,11 @@ public class BrowserApp {
                 if (isFileImage(file)){
                     imageViewFrame= new ImageViewer(file, foldersList);
                     imageViewFrame.setVisible(true);
-                    
+                    isViewerActive=true;
                 }
                 else{
                     JOptionPane.showMessageDialog(null, "Can't open the file! it's not an Image");
                 }
-                
             }
         }
     }
@@ -221,11 +221,19 @@ public class BrowserApp {
                         SwipeGesture swipe = new SwipeGesture(gesture);
                         // if it is left to right swipe 
                         if (swipe.direction().get(0)>0 && swipe.direction().get(1)>0){
-                            browser.moveToNextFile();
+                            if (isViewerActive){
+                                browser.imageViewFrame.moveToNextFile();
+                            }else{
+                                browser.moveToNextFile();
+                            }
                         }
                         // if it is right to left swipe
                         else if (swipe.direction().get(0)<0 && swipe.direction().get(1)<0){
-                            browser.moveToPreviousFile();
+                            if (isViewerActive){
+                                browser.imageViewFrame.moveToPreviousFile();
+                            }else{
+                                browser.moveToPreviousFile();
+                            }
                         }
                     break;
                     case TYPE_CIRCLE:
@@ -241,7 +249,13 @@ public class BrowserApp {
                             }
                             
                             if (!clockwise){
-                                browser.goToParentFolder();
+                                if(isViewerActive){
+                                    browser.imageViewFrame.setVisible(false);
+                                    isViewerActive=false;
+                                }
+                                else{
+                                    browser.goToParentFolder();
+                                }
                             }
                         }
 

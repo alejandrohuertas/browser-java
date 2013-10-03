@@ -118,7 +118,7 @@ public class ImageViewer extends JFrame {
 
 	}	
 
-	private void moveToNextFile(){
+	protected void moveToNextFile(){
         if (foldersList.getModel().getSize() > (foldersList.getSelectedIndex()+1)){
         	foldersList.setSelectedIndex(foldersList.getSelectedIndex()+1);
         	if (((File) foldersList.getModel().getElementAt(foldersList.getSelectedIndex())).isDirectory()){
@@ -130,7 +130,7 @@ public class ImageViewer extends JFrame {
         updateImageIcon(foldersList.getSelectedIndex());
     }
 	
-    private void moveToPreviousFile(){
+    protected void moveToPreviousFile(){
         if (foldersList.getSelectedIndex()-1 >=0 ){
             foldersList.setSelectedIndex(foldersList.getSelectedIndex()-1);
             if (((File) foldersList.getModel().getElementAt(foldersList.getSelectedIndex())).isDirectory()){
