@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 
-import javax.activation.MimetypesFileTypeMap;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -17,6 +16,7 @@ import javax.swing.JScrollPane;
 import javax.swing.SwingConstants;
 
 import standalone.utils.MyFileCellRenderer;
+import standalone.utils.FileUtils;
 
 import com.leapmotion.leap.CircleGesture;
 import com.leapmotion.leap.Controller;
@@ -34,11 +34,12 @@ public class BrowserApp {
     private JList foldersList;
     private JPanel panel;
     private JLabel workingWith;
-    private ImageViewer imageViewFrame;
+    private Viewer viewFrame;
 	protected boolean isViewerActive; 
 	/**
 	 * Launch the application.
 	 */
+	
 	/*
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -94,10 +95,14 @@ public class BrowserApp {
 		panel = new JPanel();
 		panel.setBounds(10, 76, 614, 365);
 		frame.getContentPane().add(panel);
-        
+		
         loadDirectories(mainFolder);
 	}
 	
+	/*
+	 * Loads the list of file from 'folder'
+	 * folder: current folder
+	 */
 	public void loadDirectories (File folder){
         FileFilter hiddenFilesFilter = new FileFilter() {
             
@@ -110,16 +115,18 @@ public class BrowserApp {
         File[] files = folder.listFiles(hiddenFilesFilter);
         panel.setLayout(null);
         panel.removeAll();
+        
+        //Updates folder url
         workingWith.setText("Working with " + folder.getAbsolutePath());
+        
         JScrollPane scrollPane = new JScrollPane();
         scrollPane.setBounds(10, 5, 594, 349);
         panel.add(scrollPane);
         
 	    foldersList = new JList(files);
-	    //List
+	    
+	    //Sets the custom cell renderer
 	    foldersList.setCellRenderer(new MyFileCellRenderer());
-	    //Images
-	    //foldersList.setCellRenderer(new MyCellRenderer());
 	    
         scrollPane.setViewportView(foldersList);
         foldersList.setVisibleRowCount(9);       
@@ -130,46 +137,49 @@ public class BrowserApp {
 
     }
 
-
+	/*
+	 * Open the selected file from foldersList
+	 */
     public void openSelectedFile(){
         if (foldersList.getModel().getSize()>0){
             File file = (File) foldersList.getModel().getElementAt(foldersList.getSelectedIndex());
+            //If is a directory enter to the folder
             if (file.isDirectory()){
                 loadDirectories(file);
-            }
-            else{
-                if (isFileImage(file)){
-                    imageViewFrame= new ImageViewer(file, foldersList);
-                    imageViewFrame.setVisible(true);
+            }else{
+            	//If the selected file is an image or a text file call the viewer
+                if (FileUtils.isFileImage(file) || FileUtils.isFileText(file)){
+                    viewFrame= new Viewer(file, foldersList);
+                    viewFrame.setVisible(true);
                     isViewerActive=true;
-                }
-                else{
-                    JOptionPane.showMessageDialog(null, "Can't open the file! it's not an Image");
+                }else{
+                    JOptionPane.showMessageDialog(null, "Can't open the file! it's not an Image or a Txt file");
                 }
             }
         }
     }
 
-    public boolean isFileImage(File file){
-
-        MimetypesFileTypeMap mtFileTypeMap = new MimetypesFileTypeMap();
-        mtFileTypeMap.addMimeTypes("image/png png PNG");
-        String mimetype= mtFileTypeMap.getContentType(file);
-        String type = mimetype.split("/")[0];
-        return type.equals("image");
-    }
-	
+    /*
+     * Moves to next file in the folder
+     */
     public void moveToNextFile(){
         if (foldersList.getModel().getSize()>=(foldersList.getSelectedIndex()+1)){
             foldersList.setSelectedIndex(foldersList.getSelectedIndex()+1);
         }
     }
+    
+    /*
+     * Moves to previous file in the folder
+     */
     public void moveToPreviousFile(){
         if (foldersList.getSelectedIndex()-1 >=0 ){
             foldersList.setSelectedIndex(foldersList.getSelectedIndex()-1);
         }
     }
     
+    /*
+     * Goes to parent folder
+     */
     public void goToParentFolder() {
         File file = (File) foldersList.getModel().getElementAt(foldersList.getSelectedIndex());
         File currentFolder = new File(file.getParent());
@@ -182,6 +192,9 @@ public class BrowserApp {
         }
     }
     
+    /*
+     * Listener inner class to initialize and configure the Leap Motion device
+     */
     class LeapListenerController extends Listener {
         
         public void onInit(Controller controller) {
@@ -222,7 +235,7 @@ public class BrowserApp {
                         // if it is left to right swipe 
                         if (swipe.direction().get(0)>0 && swipe.direction().get(1)>0){
                             if (isViewerActive){
-                                browser.imageViewFrame.moveToNextFile();
+                                browser.viewFrame.moveToNextFile();
                             }else{
                                 browser.moveToNextFile();
                             }
@@ -230,7 +243,7 @@ public class BrowserApp {
                         // if it is right to left swipe
                         else if (swipe.direction().get(0)<0 && swipe.direction().get(1)<0){
                             if (isViewerActive){
-                                browser.imageViewFrame.moveToPreviousFile();
+                                browser.viewFrame.moveToPreviousFile();
                             }else{
                                 browser.moveToPreviousFile();
                             }
@@ -250,7 +263,7 @@ public class BrowserApp {
                             
                             if (!clockwise){
                                 if(isViewerActive){
-                                    browser.imageViewFrame.setVisible(false);
+                                	browser.viewFrame.setVisible(false);
                                     isViewerActive=false;
                                 }
                                 else{
@@ -277,7 +290,7 @@ public class BrowserApp {
             }
         }
     }
-    
+
     public static void main (String... args){
         browser = new BrowserApp();
         
@@ -299,9 +312,5 @@ public class BrowserApp {
 
         // Remove the sample listener when done
         controller.removeListener(leapListener);
-    }
-    
-
-
-   
+    }   
 }

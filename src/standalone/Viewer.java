@@ -2,11 +2,9 @@ package standalone;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.EventQueue;
+
 import java.awt.Image;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
@@ -24,32 +22,18 @@ import java.awt.image.BufferedImage;
 import javax.swing.JTextArea;
 import javax.swing.JScrollPane;
 
+import standalone.utils.FileUtils;
+
 public class Viewer extends JFrame {
 
 	private static final long serialVersionUID = 1L;
 	
-	private JPanel contentPane;
+	private final static String contentNotSupportedURL = System.getProperty("user.dir")+"\\images\\content_not_supported.gif";
+	
 	private JTextArea textArea;	
 	private JList foldersList;
 	private JLabel image;	
-	private JScrollPane scrollPane;
-	
-	private final static String contentNotSupportedURL = System.getProperty("user.dir")+"\\images\\content_not_supported.gif";
-	/**
-	 * Launch the application.
-	 */
-	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					Viewer frame = new Viewer();
-					frame.setVisible(true);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
-	}
+	private JScrollPane scrollPane;	
 
 	public Viewer(File file, JList foldersList) {
 		this.foldersList = foldersList;
@@ -58,7 +42,7 @@ public class Viewer extends JFrame {
 		setBounds(100, 100, 450, 500);
 		setResizable(false);
 		
-		contentPane = new JPanel();
+		JPanel contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		contentPane.setLayout(new BorderLayout(0, 0));
 		
@@ -95,116 +79,123 @@ public class Viewer extends JFrame {
 		JPanel centerPanel = new JPanel();
 		contentPane.add(centerPanel, BorderLayout.CENTER);
 		
+		//TextArea used to display txt files
 		textArea = new JTextArea();
-		textArea.setText(readFile(file.getPath()));
+		textArea.setText(FileUtils.readFile(file.getPath()));
 		
+		//The text are is wrapped into a ScrollPane
 		scrollPane = new JScrollPane(textArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		scrollPane.setPreferredSize(new Dimension(400, 410));
 		
 		centerPanel.add(scrollPane);
 		
+		//JLabel used to display the images
 		image = new JLabel("");
 		image.setBounds(10, 11, 400, 410);
 		image.setIcon(new ImageIcon(file.getPath()));
 		centerPanel.add(image);
 		
+		//Render the viewer accordingly the type of file (image or txt)
 		updateViewerByTypeOfFile();		
 	}
 	
-	private void moveToNextFile(){
+	/* 
+	 * Moves to next file in the folder list and render it accordingly	 * 
+	 */
+	protected void moveToNextFile(){
         if (foldersList.getModel().getSize() > (foldersList.getSelectedIndex()+1)){
         	foldersList.setSelectedIndex(foldersList.getSelectedIndex()+1);
+        	//Skip directory folders
         	if (((File) foldersList.getModel().getElementAt(foldersList.getSelectedIndex())).isDirectory()){
         		moveToNextFile();
         	}
         }else{
+        	//Moves to the first file in the folder if the index is positioned on the last file
         	foldersList.setSelectedIndex(0);
         }
+        //Render the viewer accordingly the type of file (image or txt)
         updateViewerByTypeOfFile();
     }
 	
-    private void moveToPreviousFile(){
+	/* 
+	 * Moves to previous file in the folder list and render it accordingly	 
+	 */
+    protected void moveToPreviousFile(){
         if (foldersList.getSelectedIndex()-1 >=0 ){
             foldersList.setSelectedIndex(foldersList.getSelectedIndex()-1);
+           //Skip directory folders
             if (((File) foldersList.getModel().getElementAt(foldersList.getSelectedIndex())).isDirectory()){
         		moveToPreviousFile();
         	}
             
         }else{
+        	//Moves to the last file in the folder if the index is positioned on the first file
         	foldersList.setSelectedIndex(foldersList.getModel().getSize() - 1);	
         }
+       //Render the viewer accordingly the type of file (image or txt)
         updateViewerByTypeOfFile();
     }
     
+    /*
+     * Updates and make visible the main panel accordingly with the type of file to show
+     */
     private void updateViewerByTypeOfFile(){
     	if(isAnImage()){
-    		updateImageIcon(foldersList.getSelectedIndex());
+    		updateImageIcon();
             scrollPane.setVisible(false);
             image.setVisible(true);
         }else if (isATxt()){            
-            updateText(foldersList.getSelectedIndex());
+            updateText();
             scrollPane.setVisible(true);
-        	image.setVisible(false);        	
-
+        	image.setVisible(false); 
         }else{
+        	//If the file has a not supported content an image with the legend "Content Not Supported" is displayed
         	updateImageIcon(null);
             scrollPane.setVisible(false);
             image.setVisible(true);
         }
     }
     
+    /*
+     * Returns if the file is an image (jpg, png, gif, bmp, etc)
+     */
     private Boolean isAnImage(){   	
-    	File file = ((File) foldersList.getModel().getElementAt(foldersList.getSelectedIndex()));    	
-    	return file.getName().contains(".jpg") || file.getName().contains(".png") || file.getName().contains(".gif");    
+    	return FileUtils.isFileImage(((File) foldersList.getModel().getElementAt(foldersList.getSelectedIndex())));    
     }
     
-    private Boolean isATxt(){   	
-    	File file = ((File) foldersList.getModel().getElementAt(foldersList.getSelectedIndex()));    	
-    	return file.getName().contains(".txt");    
+    /*
+     * Returns if the file is a text file
+     */
+    private Boolean isATxt(){   
+    	return FileUtils.isFileText(((File) foldersList.getModel().getElementAt(foldersList.getSelectedIndex())));    
     }
     
-    private void updateText(int selectedIndex) {    	
+    /*
+     * Updates the textArea with the current file selected on the folderList
+     */
+    private void updateText() {    	
 		try {
-			textArea.setText(readFile(((File) foldersList.getModel().getElementAt(selectedIndex)).getPath()));
+			textArea.setText(FileUtils.readFile(((File) foldersList.getModel().getElementAt(foldersList.getSelectedIndex())).getPath()));
 			
 			//Force the scrollpanel to start at the top
 	    	textArea.setSelectionStart(0);
 	    	textArea.setSelectionEnd(0);
 		} catch (Exception e) {
-			textArea.setText("la la la");
+			textArea.setText("Content Not Supported");
 		}
 	}        
-    
-    private String readFile(String path){
-    	String content = "";
-    	BufferedReader br = null;
     	
-        try {
-        	br = new BufferedReader(new FileReader(path));
-            StringBuilder sb = new StringBuilder();
-            String line = br.readLine();
-
-            while (line != null) {
-                sb.append(line + '\n');
-                line = br.readLine();
-            }
-            content = sb.toString();
-            br.close();
-        }catch(IOException e){
-        	try {
-				br.close();
-			} catch (IOException e1) {
-				//DO nothing
-			}
-        } 
-    	
-    	return content;    	
-    }
-    	
-	private void updateImageIcon(int selectedIndex) {
-		updateImageIcon((File) foldersList.getModel().getElementAt(selectedIndex));
+    /*
+     * Updates the textArea with the current file selected on the folderList
+     */
+	private void updateImageIcon() {
+		updateImageIcon((File) foldersList.getModel().getElementAt(foldersList.getSelectedIndex()));
 	} 
 	
+	/*
+     * Set the image.Icon with a scaled instance of 'file'
+     * file: input file
+     */
 	private void updateImageIcon(File file){
 		if(file != null){
 			try {
@@ -214,9 +205,11 @@ public class Viewer extends JFrame {
 			
 				image.setIcon(new ImageIcon(resizedImage));
 			} catch (IOException e) {
+				//Display the Content Not Supported image 
 				image.setIcon(new ImageIcon(new File(contentNotSupportedURL).getAbsolutePath()));
 			}	
 		}else{
+			//Display the Content Not Supported image 
 			image.setIcon(new ImageIcon(new File(contentNotSupportedURL).getAbsolutePath()));
 		}
 	}
@@ -228,7 +221,7 @@ public class Viewer extends JFrame {
 		
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setBounds(100, 100, 451, 500);
-		contentPane = new JPanel();
+		JPanel contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		contentPane.setLayout(new BorderLayout(0, 0));
 		setContentPane(contentPane);
@@ -265,7 +258,7 @@ public class Viewer extends JFrame {
 		contentPane.add(centerPanel, BorderLayout.CENTER);
 		
 		textArea = new JTextArea();
-		textArea.setText(readFile("C:\\Users\\amilcar.infante\\Pictures\\Deploys.txt"));
+		textArea.setText("Test");
 		
 		JScrollPane scrollPane = new JScrollPane(textArea, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
 		scrollPane.setPreferredSize(new Dimension(400, 410));
