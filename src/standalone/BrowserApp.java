@@ -2,22 +2,21 @@ package standalone;
 
 //import java.awt.EventQueue;
 
-import standalone.utils.*;
-
-import javax.activation.MimetypesFileTypeMap;
-import javax.swing.JFrame;
-import javax.swing.JList;
-import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
-
-import javax.swing.JLabel;
 import java.awt.Font;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 
+import javax.activation.MimetypesFileTypeMap;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.SwingConstants;
+
+import standalone.utils.MyFileCellRenderer;
 
 import com.leapmotion.leap.CircleGesture;
 import com.leapmotion.leap.Controller;
@@ -35,8 +34,8 @@ public class BrowserApp {
     private JList foldersList;
     private JPanel panel;
     private JLabel workingWith;
-
-	
+    private ImageViewer imageViewFrame;
+	protected boolean isViewerActive; 
 	/**
 	 * Launch the application.
 	 */
@@ -65,6 +64,7 @@ public class BrowserApp {
 	 * Initialize the contents of the frame.
 	 */
 	private void initialize() {
+	    isViewerActive = false;
 		frame = new JFrame();
 		frame.setBounds(100, 100, 640, 480);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -130,32 +130,35 @@ public class BrowserApp {
 
     }
 
-    
-	public void openSelectedFile(){
-	    if (foldersList.getModel().getSize()>0){
+
+    public void openSelectedFile(){
+        if (foldersList.getModel().getSize()>0){
             File file = (File) foldersList.getModel().getElementAt(foldersList.getSelectedIndex());
             if (file.isDirectory()){
                 loadDirectories(file);
             }
             else{
-                boolean isImage= false;
-                String mimetype= new MimetypesFileTypeMap().getContentType(file);
-                String type = mimetype.split("/")[0];
-                if(type.equals("image"))
-                    isImage= true;
-                
-                if (isImage){
-                    JOptionPane.showMessageDialog(null, "Is an IMAGE");
-                    //TODO: must show the image in an new window like a JOptionPane maybe, to begin
-                    
+                if (isFileImage(file)){
+                    imageViewFrame= new ImageViewer(file, foldersList);
+                    imageViewFrame.setVisible(true);
+                    isViewerActive=true;
                 }
                 else{
                     JOptionPane.showMessageDialog(null, "Can't open the file! it's not an Image");
                 }
-                
             }
         }
     }
+
+    public boolean isFileImage(File file){
+
+        MimetypesFileTypeMap mtFileTypeMap = new MimetypesFileTypeMap();
+        mtFileTypeMap.addMimeTypes("image/png png PNG");
+        String mimetype= mtFileTypeMap.getContentType(file);
+        String type = mimetype.split("/")[0];
+        return type.equals("image");
+    }
+	
     public void moveToNextFile(){
         if (foldersList.getModel().getSize()>=(foldersList.getSelectedIndex()+1)){
             foldersList.setSelectedIndex(foldersList.getSelectedIndex()+1);
@@ -218,11 +221,19 @@ public class BrowserApp {
                         SwipeGesture swipe = new SwipeGesture(gesture);
                         // if it is left to right swipe 
                         if (swipe.direction().get(0)>0 && swipe.direction().get(1)>0){
-                            browser.moveToNextFile();
+                            if (isViewerActive){
+                                browser.imageViewFrame.moveToNextFile();
+                            }else{
+                                browser.moveToNextFile();
+                            }
                         }
                         // if it is right to left swipe
                         else if (swipe.direction().get(0)<0 && swipe.direction().get(1)<0){
-                            browser.moveToPreviousFile();
+                            if (isViewerActive){
+                                browser.imageViewFrame.moveToPreviousFile();
+                            }else{
+                                browser.moveToPreviousFile();
+                            }
                         }
                     break;
                     case TYPE_CIRCLE:
@@ -238,7 +249,13 @@ public class BrowserApp {
                             }
                             
                             if (!clockwise){
-                                browser.goToParentFolder();
+                                if(isViewerActive){
+                                    browser.imageViewFrame.setVisible(false);
+                                    isViewerActive=false;
+                                }
+                                else{
+                                    browser.goToParentFolder();
+                                }
                             }
                         }
 
