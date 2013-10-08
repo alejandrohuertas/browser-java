@@ -15,8 +15,8 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingConstants;
 
-import standalone.utils.MyFileCellRenderer;
 import standalone.utils.FileUtils;
+import standalone.utils.MyFileCellRenderer;
 
 import com.leapmotion.leap.CircleGesture;
 import com.leapmotion.leap.Controller;
@@ -123,13 +123,12 @@ public class BrowserApp {
         scrollPane.setBounds(10, 5, 594, 349);
         panel.add(scrollPane);
         
-	    foldersList = new JList(files);
-	    
-	    //Sets the custom cell renderer
-	    foldersList.setCellRenderer(new MyFileCellRenderer());
-	    
+        foldersList = new JList(files);
+
+        //Sets the custom cell renderer
+        foldersList.setCellRenderer(new MyFileCellRenderer());
+
         scrollPane.setViewportView(foldersList);
-        foldersList.setVisibleRowCount(9);       
         foldersList.setSelectedIndex(0);
         panel.revalidate();
         this.frame.repaint();
@@ -164,7 +163,10 @@ public class BrowserApp {
      */
     public void moveToNextFile(){
         if (foldersList.getModel().getSize()>=(foldersList.getSelectedIndex()+1)){
-            foldersList.setSelectedIndex(foldersList.getSelectedIndex()+1);
+            int newIndex = foldersList.getSelectedIndex()+1;
+            foldersList.setSelectedIndex(newIndex);
+            foldersList.ensureIndexIsVisible(newIndex);
+            
         }
     }
     
@@ -173,7 +175,9 @@ public class BrowserApp {
      */
     public void moveToPreviousFile(){
         if (foldersList.getSelectedIndex()-1 >=0 ){
-            foldersList.setSelectedIndex(foldersList.getSelectedIndex()-1);
+            int newIndex = foldersList.getSelectedIndex()-1;
+            foldersList.setSelectedIndex(newIndex);
+            foldersList.ensureIndexIsVisible(newIndex);
         }
     }
     
@@ -233,7 +237,7 @@ public class BrowserApp {
                     case TYPE_SWIPE:
                         SwipeGesture swipe = new SwipeGesture(gesture);
                         // if it is left to right swipe 
-                        if (swipe.direction().get(0)>0 && swipe.direction().get(1)>0){
+                        if (swipe.direction().get(0)>0 && swipe.direction().get(2)>0){
                             if (isViewerActive){
                                 browser.viewFrame.moveToNextFile();
                             }else{
@@ -241,7 +245,7 @@ public class BrowserApp {
                             }
                         }
                         // if it is right to left swipe
-                        else if (swipe.direction().get(0)<0 && swipe.direction().get(1)<0){
+                        else if (swipe.direction().get(0)<0 && swipe.direction().get(2)<0){
                             if (isViewerActive){
                                 browser.viewFrame.moveToPreviousFile();
                             }else{
@@ -275,7 +279,7 @@ public class BrowserApp {
                     break;
                     case TYPE_KEY_TAP:
                         KeyTapGesture keytap = new KeyTapGesture(gesture);
-                        if (keytap.duration()>100000){
+                        if (keytap.duration()>100000 && !isViewerActive){
                             browser.openSelectedFile();
                         }
                     break;
